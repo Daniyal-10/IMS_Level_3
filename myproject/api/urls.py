@@ -8,7 +8,7 @@ from rest_framework_simplejwt.views import (
 )
 
 router = DefaultRouter()
-router.register(r'employee', EmployeeViewSet)
+# router.register(r'employee', EmployeeViewSet)
 router.register(r'incident', IncidentTicketViewSet)
 router.register(r'role', RoleViewSet)
 router.register(r'department', DepartmentViewSet)
@@ -17,6 +17,7 @@ router.register(r'potential', PotentialSeverityView)
 router.register(r'recurrency', RecurrencyViewSet)
 router.register(r'risklevel', Risk_levelViewSet)
 router.register(r'riskassessment', RiskAssessmentView)
+router.register(r'both', EmployeeUserViewSet)
 
 urlpatterns = [
     # path('role/', RoleView),

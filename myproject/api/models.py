@@ -102,9 +102,11 @@ class Status(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=20)
 
-class status_time(models.Model):
+class Incident_status(models.Model):
     id = models.AutoField(primary_key=True)
-    date = models.DateTimeField(auto_now=True)
+    status_id = models.ForeignKey(Status, on_delete=models.CASCADE)
+    incident_id = models.ForeignKey('Incident_Ticket', on_delete=models.CASCADE)
+    date_created = models.DateTimeField(auto_now=True)
 
 class Potential_severity(models.Model):
     id = models.AutoField(primary_key=True)
@@ -122,30 +124,32 @@ class Risk_assessment(models.Model):
     recurrency = models.ForeignKey(Recurrency, on_delete=models.CASCADE)
     risk_level = models.ForeignKey(Risk_level, on_delete=models.CASCADE)
 
-# class Improvement_Recommendation(models.Model):
-#     id = models.AutoField(primary_key=True)
-#     action_description = models.CharField(max_length=500)
-#     responsible_employee_id = models.ForeignKey(Employee, on_delete=models.CASCADE)
-#     incident_id = models.ForeignKey('Incident_Ticket', on_delete=models.CASCADE)
+class Improvement_Recommendation(models.Model):
+    id = models.AutoField(primary_key=True)
+    action_description = models.CharField(max_length=500)
+    responsible_employee_id = models.ForeignKey(Employee, on_delete=models.CASCADE)
+    incident_id = models.ForeignKey('Incident_Ticket', on_delete=models.CASCADE)
 
-# class Follow_up_action(models.Model):
-#     id = models.AutoField(primary_key=True)
-#     action_description = models.CharField(max_length=500)
-#     date_completed = models.DateTimeField()
-#     responsible_employee_id = models.ManyToManyField(Employee, db_table="Follow_up_taken_by")
-#     incident_id = models.ForeignKey('Incident_Ticket', on_delete=models.CASCADE)
+class Follow_up_action(models.Model):
+    id = models.AutoField(primary_key=True)
+    action_description = models.CharField(max_length=500)
+    date_completed = models.DateTimeField()
+    responsible_employee_id = models.ForeignKey(Employee, on_delete=models.CASCADE)
+    incident_id = models.ForeignKey('Incident_Ticket', on_delete=models.CASCADE)
 
 
-# class Immediate_actions(models.Model):
-#     id = models.AutoField(primary_key=True)
-#     Description = models.CharField(max_length=500)
-#     action_taken_by = models.ManyToManyField(Employee, through='Immediate_actions_employee')
+class Immediate_actions(models.Model):
+    id = models.AutoField(primary_key=True)
+    Description = models.CharField(max_length=500)
+    incident_id = models.ForeignKey('Incident_Ticket', on_delete=models.CASCADE, null=True)
+    action_taken_by = models.ManyToManyField(Employee, through='Immediate_action_employee',related_name='action_employee')
+    
 
-# class Immediate_action_employee(models.Model):
-#     id = models.AutoField(primary_key=True)
-#     employee_id = models.ForeignKey(Employee, on_delete=models.CASCADE)
-#     immediate_action_id = models.ForeignKey(Immediate_actions, on_delete=models.CASCADE)
-
+class Immediate_action_employee(models.Model):
+    id = models.AutoField(primary_key=True)
+    immediate_action_id = models.ForeignKey('Immediate_actions', on_delete=models.CASCADE)
+    employee_id = models.ForeignKey(Employee, on_delete=models.CASCADE)
+    
 
 
 #Final Ticket
@@ -160,13 +164,13 @@ class Incident_Ticket(models.Model):
     evidence = models.ForeignKey(Incident_Evidence, on_delete=models.CASCADE, null=True)
     contributing_factors = models.ManyToManyField(Contributing_factor , through="Incident_factor")
     # # New fields
-    # Individuals_invloved = models.ManyToManyField(Employee, db_table="Individuals_involved", null=True)
-    # Witnesses = models.ManyToManyField(Employee, db_table="Incident_witness",null=True) 
-    # Action_taken = models.ManyToManyField(Employee, through="Immediate_actions", null=True)
-    # Risk_assessment = models.ForeignKey(Risk_assessment, on_delete=models.CASCADE, null=True)
-    # Improvement_recommendation = models.ManyToManyField(Employee,through="Improvement_Recommendation", null=True)
-    # Follow_up = models.ManyToManyField(Employee,through="Follow_up_action", null=True)
-    # status = models.ManyToManyField(Status, through = "status_time", null=True)
+    Individuals_invloved = models.ManyToManyField(Employee, db_table="Individuals_involved", related_name='individuals_involved')
+    Witnesses = models.ManyToManyField(Employee, db_table="Incident_witness", related_name='witness') 
+    ImmediateActions = models.ForeignKey(Immediate_actions,on_delete=models.CASCADE, null=True, related_name='action_taken')
+    Risk_assessment = models.ForeignKey(Risk_assessment, on_delete=models.CASCADE, null=True)
+    Improvement_recommendations = models.ManyToManyField(Employee, through="Improvement_Recommendation", related_name='Improvements')
+    Follow_up = models.ManyToManyField(Employee,through="Follow_up_action", related_name='follow_up_tickets')
+    status = models.ManyToManyField(Status, through = "Incident_status", related_name='ticket_status')
 
 class Incident_factor(models.Model):
     factor_id = models.ForeignKey(Contributing_factor, on_delete=models.CASCADE)

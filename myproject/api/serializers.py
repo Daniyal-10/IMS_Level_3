@@ -81,14 +81,99 @@ class Risk_levelSerializer(serializers.ModelSerializer):
 
 class RiskAssessmentSerializer(serializers.ModelSerializer):
     class Meta:
-        models = Risk_assessment
+        model = Risk_assessment
         fields = "__all__"
+class ImmediateAction_Serializer(serializers.ModelSerializer):
+    class Meta:
+        model = Immediate_actions
+        fields = "__all__"
+class contributing_factors_Serializer(serializers.ModelSerializer):
+    class Meta:
+        model = Contributing_factor
+        fields = "__all__"
+
+# Creating Employee and user in this serializer 
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = ["first_name","last_name","email","role","password"]
+        extra_kwargs = {
+        'password': {'write_only': True}
+        }
+
+    def create(self, validated_data):
+        return CustomUser.objects.create_user(**validated_data)
+    
+class EmployeeUserSerializer(serializers.ModelSerializer):
+    user = UserSerializer()
+    
+    class Meta:
+        model = Employee
+        fields = "__all__"
+    
+    def create(self, validated_data):
+        user_data = validated_data.pop('user')
+        user = UserSerializer().create(user_data)
+
+        employee = Employee.objects.create(user=user, **validated_data)
+        return employee
+
+
+
+    # def create(self, validated_data):
+
+    #     return super().create(validated_data)    
 
 class Incident_ticketSerializer(serializers.ModelSerializer):
+    ImmediateAction=ImmediateAction_Serializer()
+    contributing_factors=contributing_factors_Serializer()
+
     class Meta:
-        models = Incident_Ticket
+        model = Incident_Ticket
         fields = "__all__"
 
+
+# class IncidentTicketSerializer1(serializers.ModelSerializer):
+#     Reporter = serializers.SerializerMethodField()
+#     Department = DepartmentSerializer(source='department', read_only=True)
+#     Report_Type = serializers.CharField(source='report_type.name', read_only=True)
+#     Occurance_date = serializers.DateTimeField(source='occurence_date', read_only=True)
+#     AssignedPOC = serializers.SerializerMethodField()
+#     ContributingFactors = serializers.SerializerMethodField()
+
+#     class Meta:
+#         model = Incident_Ticket
+#         fields = [
+#             'id',
+#             'Reporter',
+#             'Report_Type',
+#             'Department',
+#             'Occurance_date',
+#             'location',
+#             'AssignedPOC',
+#             'ContributingFactors'
+#         ]
+
+#     def get_Reporter(self, obj):
+#         emp = obj.requestor_id
+#         full_name = f"{emp.user.first_name} {emp.user.last_name}"
+#         designation = emp.designation_id.name if emp.designation_id else ""
+#         return {
+#             "Name": full_name,
+#             "Designation": designation
+#         }
+
+#     def get_AssignedPOC(self, obj):
+#         if obj.assigned_POC and obj.assigned_POC.employee_id:
+#             poc_user = obj.assigned_POC.employee_id.user
+#             return {
+#                 "Name": f"{poc_user.first_name} {poc_user.last_name}"
+#             }
+#         return None
+
+#     def get_ContributingFactors(self, obj):
+#         return [factor.name for factor in obj.contributing_factors.all()]
 
 class IncidentSerializer2(serializers.ModelSerializer):
     class Meta:
@@ -102,8 +187,9 @@ class IncidentSerializer2(serializers.ModelSerializer):
             'occurence_date',
             'location',
             'assigned_POC',
-            'contributing_factors'
+            'contributing_factors',
         ]
+    
     def to_representation(self, instance):
 
         rep =  super().to_representation(instance)   #in this we get the initial data from the model

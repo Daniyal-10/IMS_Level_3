@@ -85,6 +85,11 @@ from rest_framework import viewsets
 #             return Response({'message': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
 
+# Creating User and Employee at the same time in this view but in the serializer
+class EmployeeUserViewSet(viewsets.ModelViewSet):
+    queryset = Employee.objects.all()
+    serializer_class = EmployeeUserSerializer
+
 # Making some view using ModelViewSet
 
 class RoleViewSet(viewsets.ModelViewSet):
@@ -99,9 +104,9 @@ class DesignationViewSet(viewsets.ModelViewSet):
     queryset =  Designation.objects.all()
     serializer_class = DesignationSerializer    
 
-class EmployeeViewSet(viewsets.ModelViewSet):
-    queryset =  Employee.objects.all()
-    serializer_class = EmployeeProfile
+# class EmployeeViewSet(viewsets.ModelViewSet):
+#     queryset =  Employee.objects.all()
+#     serializer_class = EmployeeProfile
 
 class DepartmentPOCViewSet(viewsets.ModelViewSet):
     queryset =  Department_poc.objects.all()
@@ -119,9 +124,6 @@ class StakeHolderViewSet(viewsets.ModelViewSet):
     queryset =  Stake_holder.objects.all()
     serializer_class = StakeHolderSerializer
 
-class IncidentTicketViewSet(viewsets.ModelViewSet):
-    queryset = Incident_Ticket.objects.all()
-    serializer_class = IncidentSerializer2
     
 class PotentialSeverityView(viewsets.ModelViewSet):
     queryset = Potential_severity.objects.all()
@@ -138,3 +140,7 @@ class Risk_levelViewSet(viewsets.ModelViewSet):
 class RiskAssessmentView(viewsets.ModelViewSet):
     queryset = Risk_assessment.objects.all()
     serializer_class = RiskAssessmentSerializer
+
+class IncidentTicketViewSet(viewsets.ModelViewSet):
+    queryset = Incident_Ticket.objects.all()
+    serializer_class = Incident_ticketSerializer    
