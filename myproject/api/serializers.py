@@ -16,6 +16,11 @@ class DesignationSerializer(serializers.ModelSerializer):
         model = Designation
         fields = "__all__"
 
+class IncidentTypeSerializer(serializers.ModelSerializer):
+    class Meta: 
+        model = Incident_type
+        fields = "__all__"
+
 class StakeHolderSerializer(serializers.ModelSerializer):
     class Meta: 
         model = Stake_holder
@@ -91,7 +96,20 @@ class contributing_factors_Serializer(serializers.ModelSerializer):
     class Meta:
         model = Contributing_factor
         fields = "__all__"
+class IncidentFactorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Incident_factor
+        fields = "__all__"
 
+class StatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Status
+        fields = "__all__"
+
+class riskassessmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Risk_assessment
+        fields = "__all__"
 # Creating Employee and user in this serializer 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -124,15 +142,74 @@ class EmployeeUserSerializer(serializers.ModelSerializer):
     # def create(self, validated_data):
 
     #     return super().create(validated_data)    
+class Improvement_recommendationsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Improvement_Recommendation
+        fields = "__all__"
 
+class Follow_up_actionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Follow_up_action
+        fields = "__all__"
+
+#Example payload        
+'''
+{
+  "requestor_id": 1,
+  "report_type": 1,
+  "facility": "yh",
+  "location": "k",
+"department":1,
+  "description": "llllll",
+  "contributing_factor": [3],
+  "Individuals_involved": [4],
+  "incident_witness": [3],
+  "immediateActions": [
+    {
+      "employee_id": [1],
+      "title": "nn",
+      "description": "k"
+    },
+    {
+      "employee_id": [2, 4],
+      "title": "vm mjn",
+      "description": "jjj"
+    }
+  ],
+"incidentEvidences" : [],
+
+}
+'''
 class Incident_ticketSerializer(serializers.ModelSerializer):
     ImmediateAction=ImmediateAction_Serializer()
     contributing_factors=contributing_factors_Serializer()
+    status=StatusSerializer()
+    Improvement_Recommendation = Improvement_recommendationsSerializer()
+    Follow_up_action = Follow_up_actionSerializer()
+    risk_assessment = riskassessmentSerializer()
 
     class Meta:
         model = Incident_Ticket
         fields = "__all__"
 
+    def create(self, validated_data):
+        immediate_data = validated_data.pop("Immediate_actions")
+        factor_data = validated_data.pop("contributing_factors")
+        improve_data = validated_data.pop("Improvement_recommendations")
+        follow_data = validated_data.pop("Follow_up")
+        risk_data = validated_data.pop("Risk_assessment")
+
+
+
+        ticket = Incident_Ticket.objects.create(
+            requestor_id=validated_data["requestor_id"],
+            report_type=validated_data["report_type"],
+            location=validated_data["location"],
+            department=validated_data["department"],
+            **validated_data
+        )
+        return ticket
+        
 
 # class IncidentTicketSerializer1(serializers.ModelSerializer):
 #     Reporter = serializers.SerializerMethodField()

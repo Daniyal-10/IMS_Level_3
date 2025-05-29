@@ -104,6 +104,14 @@ class DesignationViewSet(viewsets.ModelViewSet):
     queryset =  Designation.objects.all()
     serializer_class = DesignationSerializer    
 
+class IncidentTypeViewSet(viewsets.ModelViewSet):
+    queryset =  Incident_type.objects.all()
+    serializer_class = Incident_typeSerializer
+
+class Contributing_factorsViewSet(viewsets.ModelViewSet):
+    queryset =  Contributing_factor.objects.all()
+    serializer_class = contributing_factors_Serializer    
+
 # class EmployeeViewSet(viewsets.ModelViewSet):
 #     queryset =  Employee.objects.all()
 #     serializer_class = EmployeeProfile
