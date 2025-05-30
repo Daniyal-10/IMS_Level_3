@@ -91,9 +91,9 @@ class RiskAssessmentSerializer(serializers.ModelSerializer):
 class ImmediateAction_Serializer(serializers.ModelSerializer):
     class Meta:
         model = Immediate_actions
-        fields = ["Description","action_taken_by"]
+        fields = "__all__"
 class contributing_factors_Serializer(serializers.ModelSerializer):
-    class Meta:
+    class Meta: 
         model = Contributing_factor
         fields = "__all__"
 
@@ -219,13 +219,13 @@ class Incident_ticketSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         dep_id = validated_data["department"]
-        immediate_data = validated_data.pop("ImmediateActions")
         Individual_data = validated_data.pop("Individuals_invloved")
         incident_witness_data = validated_data.pop("Witnesses")
         # incident_evidence_data = validated_data.pop("evidence")
         factors_data = validated_data.pop("contributing_factors")
         pocc = validated_data.pop("assigned_POC")
-
+        action = validated_data.pop("ImmediateActions")
+        incident_id = action["incident_id"]
 
         POC = dep_id.department_pocc.first()
         validated_data["assigned_POC"] = POC
@@ -233,6 +233,20 @@ class Incident_ticketSerializer(serializers.ModelSerializer):
         ticket = Incident_Ticket.objects.create(
             **validated_data
         )
+
+        # Immediate action code
+        for i in action:
+            employee = i.pop("action_taken_by")
+            i.incident_id =ticket.id, 
+
+            IA = Immediate_actions.objects.create(
+                **i
+            )
+
+            for emp in employee:
+                IA.action_taken_by.add(emp)
+                return IA
+
 
         # adding individuals involoved
         for i in Individual_data:
@@ -253,10 +267,21 @@ class Incident_ticketSerializer(serializers.ModelSerializer):
         #         ticket.evidence.add(i)
         # if incident_evidence_data is None:
         #     ticket.evidence.add("No Evidence")
-            
+        #
+
+
+        
+
+
+
+
         # adding immediate actions
-        for i in immediate_data:
-            ticket.ImmediateActions.add(i)
+        # for i in immediate_data:
+        #     ticket.ImmediateActions.add(i)
+
+        # ticket.ImmediateActions.incident_id = ticket.id
+        # ticket.ImmediateActions.save()
+
 
         # pocs = Department_poc.department_pocc.all()
         # assigned_poc = pocs.first()    
