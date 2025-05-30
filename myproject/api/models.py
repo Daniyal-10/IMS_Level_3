@@ -88,7 +88,7 @@ class Incident_type(models.Model):
     department_id = models.ForeignKey(Department, on_delete=models.CASCADE)
 
 class Contributing_factor(models.Model):
-    id = models.AutoField(primary_key=True)
+    id = models.IntegerField(primary_key=True)
     name = models.CharField(max_length=100)
 
 
@@ -142,13 +142,13 @@ class Immediate_actions(models.Model):
     id = models.AutoField(primary_key=True)
     Description = models.CharField(max_length=500)
     incident_id = models.ForeignKey('Incident_Ticket', on_delete=models.CASCADE, null=True)
-    action_taken_by = models.ManyToManyField(Employee, through='Immediate_action_employee',related_name='action_employee')
+    action_taken_by = models.ManyToManyField(Employee, db_table='Immediate_action_employee',related_name='action_employee')
     
 
-class Immediate_action_employee(models.Model):
-    id = models.AutoField(primary_key=True)
-    immediate_action_id = models.ForeignKey('Immediate_actions', on_delete=models.CASCADE)
-    employee_id = models.ForeignKey(Employee, on_delete=models.CASCADE)
+# class Immediate_action_employee(models.Model):
+#     id = models.AutoField(primary_key=True)
+#     immediate_action_id = models.ForeignKey('Immediate_actions', on_delete=models.CASCADE)
+#     employee_id = models.ForeignKey(Employee, on_delete=models.CASCADE)
     
 
 
@@ -162,7 +162,7 @@ class Incident_Ticket(models.Model):
     assigned_POC = models.ForeignKey(Department_poc, on_delete=models.CASCADE, null=True)
     department = models.ForeignKey(Department, on_delete=models.CASCADE)
     evidence = models.ForeignKey(Incident_Evidence, on_delete=models.CASCADE, null=True)
-    contributing_factors = models.ManyToManyField(Contributing_factor , through="Incident_factor")
+    contributing_factors = models.ManyToManyField(Contributing_factor , db_table="Incident_factor")
     # # New fields
     Individuals_invloved = models.ManyToManyField(Employee, db_table="Individuals_involved", related_name='individuals_involved')
     Witnesses = models.ManyToManyField(Employee, db_table="Incident_witness", related_name='witness') 
@@ -172,7 +172,4 @@ class Incident_Ticket(models.Model):
     Follow_up = models.ManyToManyField(Employee,through="Follow_up_action", related_name='follow_up_tickets')
     status = models.ManyToManyField(Status, through = "Incident_status", related_name='ticket_status')
 
-class Incident_factor(models.Model):
-    factor_id = models.ForeignKey(Contributing_factor, on_delete=models.CASCADE)
-    incident_id = models.ForeignKey(Incident_Ticket, on_delete=models.CASCADE)
 

@@ -91,14 +91,10 @@ class RiskAssessmentSerializer(serializers.ModelSerializer):
 class ImmediateAction_Serializer(serializers.ModelSerializer):
     class Meta:
         model = Immediate_actions
-        fields = "__all__"
+        fields = ["Description","action_taken_by"]
 class contributing_factors_Serializer(serializers.ModelSerializer):
     class Meta:
         model = Contributing_factor
-        fields = "__all__"
-class IncidentFactorSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Incident_factor
         fields = "__all__"
 
 class StatusSerializer(serializers.ModelSerializer):
@@ -136,32 +132,26 @@ class EmployeeUserSerializer(serializers.ModelSerializer):
 
         employee = Employee.objects.create(user=user, **validated_data)
         return employee
-
-
-
-    # def create(self, validated_data):
-
-    #     return super().create(validated_data)    
+ 
 class Improvement_recommendationsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Improvement_Recommendation
-        fields = "__all__"
+        fields = ["action_description","responsible_employee_id"]
 
 class Follow_up_actionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Follow_up_action
         fields = "__all__"
 
-#Example payload        
+#Example payload  
 '''
-{
+{                                                                                       
   "requestor_id": 1,
   "report_type": 1,
-  "facility": "yh",
   "location": "k",
 "department":1,
   "description": "llllll",
-  "contributing_factor": [3],
+  "contributing_factor": [3],                       
   "Individuals_involved": [4],
   "incident_witness": [3],
   "immediateActions": [
@@ -180,36 +170,100 @@ class Follow_up_actionSerializer(serializers.ModelSerializer):
 
 }
 '''
+#MY payload        
+'''
+{
+    "ImmediateAction": [
+    {
+      "employee_id": [1],
+      "title": "nn",
+      "description": "k"
+    }
+    ],
+    "contributing_factors": {
+        "name": ""
+    },
+    "location": "",
+    "requestor_id": null,
+    "report_type": null,
+    "department": null,
+    "evidence": [],
+    "ImmediateActions": [],
+    "Individuals_invloved": [],
+    "Witnesses": []
+}
+'''
 class Incident_ticketSerializer(serializers.ModelSerializer):
-    ImmediateAction=ImmediateAction_Serializer()
-    contributing_factors=contributing_factors_Serializer()
-    status=StatusSerializer()
-    Improvement_Recommendation = Improvement_recommendationsSerializer()
-    Follow_up_action = Follow_up_actionSerializer()
-    risk_assessment = riskassessmentSerializer()
+    ImmediateActions=ImmediateAction_Serializer()
+    # contributing_factors=contributing_factors_Serializer()
+    # status=StatusSerializer()
+    # Improvement_Recommendation = Improvement_recommendationsSerializer()
+    # Follow_up_action = Follow_up_actionSerializer()
+    # risk_assessment = riskassessmentSerializer()
 
     class Meta:
         model = Incident_Ticket
-        fields = "__all__"
+        fields = [
+                  'id',
+                  "requestor_id",
+                  "report_type",
+                  "location",
+                  "department",
+                #   "evidence",
+                  "assigned_POC",
+                  "ImmediateActions",
+                  "Individuals_invloved",
+                  "Witnesses",
+                  "contributing_factors"
+                  ]
 
     def create(self, validated_data):
-        immediate_data = validated_data.pop("Immediate_actions")
-        factor_data = validated_data.pop("contributing_factors")
-        improve_data = validated_data.pop("Improvement_recommendations")
-        follow_data = validated_data.pop("Follow_up")
-        risk_data = validated_data.pop("Risk_assessment")
+        dep_id = validated_data["department"]
+        immediate_data = validated_data.pop("ImmediateActions")
+        Individual_data = validated_data.pop("Individuals_invloved")
+        incident_witness_data = validated_data.pop("Witnesses")
+        # incident_evidence_data = validated_data.pop("evidence")
+        factors_data = validated_data.pop("contributing_factors")
+        pocc = validated_data.pop("assigned_POC")
 
 
+        POC = dep_id.department_pocc.first()
+        validated_data["assigned_POC"] = POC
 
         ticket = Incident_Ticket.objects.create(
-            requestor_id=validated_data["requestor_id"],
-            report_type=validated_data["report_type"],
-            location=validated_data["location"],
-            department=validated_data["department"],
             **validated_data
         )
-        return ticket
+
+        # adding individuals involoved
+        for i in Individual_data:
+            ticket.Individuals_invloved.add(i)
+            # return Individuals_invloved
         
+        # adding factors
+        for i in factors_data:
+            ticket.contributing_factors.add(i)
+
+        # adding witness
+        for i in incident_witness_data:
+            ticket.Witnesses.add(i)
+
+        #adding evidences
+        # if incident_evidence_data is not None:
+        #     for i  in incident_evidence_data:
+        #         ticket.evidence.add(i)
+        # if incident_evidence_data is None:
+        #     ticket.evidence.add("No Evidence")
+            
+        # adding immediate actions
+        for i in immediate_data:
+            ticket.ImmediateActions.add(i)
+
+        # pocs = Department_poc.department_pocc.all()
+        # assigned_poc = pocs.first()    
+        # ticket.assigned_POC.add(assigned_poc)    
+
+        return ticket
+
 
 # class IncidentTicketSerializer1(serializers.ModelSerializer):
 #     Reporter = serializers.SerializerMethodField()

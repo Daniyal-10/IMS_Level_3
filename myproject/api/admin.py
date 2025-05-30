@@ -22,7 +22,6 @@ admin.site.register(Risk_assessment)
 admin.site.register(Improvement_Recommendation)
 admin.site.register(Follow_up_action)
 admin.site.register(Immediate_actions)
-admin.site.register(Immediate_action_employee)
-admin.site.register(Incident_factor)
+# admin.site.register(Immediate_action_employee)
 
 
