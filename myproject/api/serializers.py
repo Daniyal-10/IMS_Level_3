@@ -194,7 +194,7 @@ class Follow_up_actionSerializer(serializers.ModelSerializer):
 }
 '''
 class Incident_ticketSerializer(serializers.ModelSerializer):
-    ImmediateActions=ImmediateAction_Serializer()
+    ImmediateActions=ImmediateAction_Serializer(many = True)
     # contributing_factors=contributing_factors_Serializer()
     # status=StatusSerializer()
     # Improvement_Recommendation = Improvement_recommendationsSerializer()
@@ -224,28 +224,23 @@ class Incident_ticketSerializer(serializers.ModelSerializer):
         # incident_evidence_data = validated_data.pop("evidence")
         factors_data = validated_data.pop("contributing_factors")
         pocc = validated_data.pop("assigned_POC")
-        action = validated_data.pop("ImmediateActions")
-        incident_id = action["incident_id"]
+        Immediateactions = validated_data.pop("ImmediateActions")
+        incident_id = Immediateactions["incident_id"]
 
         POC = dep_id.department_pocc.first()
         validated_data["assigned_POC"] = POC
 
-        ticket = Incident_Ticket.objects.create(
-            **validated_data
-        )
+        ticket = Incident_Ticket.objects.create(**validated_data)
 
         # Immediate action code
-        for i in action:
-            employee = i.pop("action_taken_by")
-            i.incident_id =ticket.id, 
+        for data in Immediateactions:
+            employee = data.pop("action_taken_by", [])
+            data[incident_id] = ticket, 
 
-            IA = Immediate_actions.objects.create(
-                **i
-            )
+            IA = Immediate_actions.objects.create(**data)
 
             for emp in employee:
                 IA.action_taken_by.add(emp)
-                return IA
 
 
         # adding individuals involoved
