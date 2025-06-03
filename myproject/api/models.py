@@ -141,7 +141,7 @@ class Follow_up_action(models.Model):
 class Immediate_actions(models.Model):
     id = models.AutoField(primary_key=True)
     Description = models.CharField(max_length=500)
-    incident_id = models.ForeignKey('Incident_Ticket', on_delete=models.CASCADE, null=True)
+    incident_id = models.ForeignKey('Incident_Ticket', on_delete=models.CASCADE, null=True, related_name="Immediateactions")
     action_taken_by = models.ManyToManyField(Employee, db_table='Immediate_action_employee',related_name='action_employee')
     
 
@@ -150,7 +150,6 @@ class Immediate_actions(models.Model):
 #     immediate_action_id = models.ForeignKey('Immediate_actions', on_delete=models.CASCADE)
 #     employee_id = models.ForeignKey(Employee, on_delete=models.CASCADE)
     
-
 
 #Final Ticket
 class Incident_Ticket(models.Model):

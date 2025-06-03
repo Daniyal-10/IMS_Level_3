@@ -193,6 +193,7 @@ class Follow_up_actionSerializer(serializers.ModelSerializer):
     "Witnesses": []
 }
 '''
+
 class Incident_ticketSerializer(serializers.ModelSerializer):
     ImmediateActions=ImmediateAction_Serializer(many = True)
     # contributing_factors=contributing_factors_Serializer()
@@ -225,8 +226,8 @@ class Incident_ticketSerializer(serializers.ModelSerializer):
         factors_data = validated_data.pop("contributing_factors")
         pocc = validated_data.pop("assigned_POC")
         Immediateactions = validated_data.pop("ImmediateActions")
-        incident_id = Immediateactions["incident_id"]
 
+        # Assigning POC
         POC = dep_id.department_pocc.first()
         validated_data["assigned_POC"] = POC
 
@@ -235,7 +236,7 @@ class Incident_ticketSerializer(serializers.ModelSerializer):
         # Immediate action code
         for data in Immediateactions:
             employee = data.pop("action_taken_by", [])
-            data[incident_id] = ticket, 
+            data["incident_id"] = ticket
 
             IA = Immediate_actions.objects.create(**data)
 
@@ -246,7 +247,6 @@ class Incident_ticketSerializer(serializers.ModelSerializer):
         # adding individuals involoved
         for i in Individual_data:
             ticket.Individuals_invloved.add(i)
-            # return Individuals_invloved
         
         # adding factors
         for i in factors_data:
@@ -262,20 +262,6 @@ class Incident_ticketSerializer(serializers.ModelSerializer):
         #         ticket.evidence.add(i)
         # if incident_evidence_data is None:
         #     ticket.evidence.add("No Evidence")
-        #
-
-
-        
-
-
-
-
-        # adding immediate actions
-        # for i in immediate_data:
-        #     ticket.ImmediateActions.add(i)
-
-        # ticket.ImmediateActions.incident_id = ticket.id
-        # ticket.ImmediateActions.save()
 
 
         # pocs = Department_poc.department_pocc.all()
