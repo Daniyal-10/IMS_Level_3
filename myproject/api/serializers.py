@@ -195,7 +195,7 @@ class Follow_up_actionSerializer(serializers.ModelSerializer):
 '''
 
 class Incident_ticketSerializer(serializers.ModelSerializer):
-    ImmediateActions=ImmediateAction_Serializer(many = True)
+    ImmediateActions=ImmediateAction_Serializer()
     # contributing_factors=contributing_factors_Serializer()
     # status=StatusSerializer()
     # Improvement_Recommendation = Improvement_recommendationsSerializer()
@@ -225,23 +225,24 @@ class Incident_ticketSerializer(serializers.ModelSerializer):
         # incident_evidence_data = validated_data.pop("evidence")
         factors_data = validated_data.pop("contributing_factors")
         pocc = validated_data.pop("assigned_POC")
-        Immediateactions = validated_data.pop("ImmediateActions")
+        Immediateactions = validated_data.pop("ImmediateActions", [])
+        emp = Immediateactions.pop("action_taken_by")
 
         # Assigning POC
         POC = dep_id.department_pocc.first()
         validated_data["assigned_POC"] = POC
 
+        #ticket creation
         ticket = Incident_Ticket.objects.create(**validated_data)
 
-        # Immediate action code
-        for data in Immediateactions:
-            employee = data.pop("action_taken_by", [])
-            data["incident_id"] = ticket
-
-            IA = Immediate_actions.objects.create(**data)
-
-            for emp in employee:
-                IA.action_taken_by.add(emp)
+        # Assigning Immediate Actions
+        for action in Immediateactions:
+            IA = Immediate_actions.objects.create(**Immediateactions)
+            for i in emp:
+                IA.action_taken_by.add(i)
+                
+        ticket.ImmediateActions = IA
+        ticket.save()
 
 
         # adding individuals involoved
@@ -263,11 +264,7 @@ class Incident_ticketSerializer(serializers.ModelSerializer):
         # if incident_evidence_data is None:
         #     ticket.evidence.add("No Evidence")
 
-
-        # pocs = Department_poc.department_pocc.all()
-        # assigned_poc = pocs.first()    
-        # ticket.assigned_POC.add(assigned_poc)    
-
+        ticket.refresh_from_db()
         return ticket
 
 
