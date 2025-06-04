@@ -95,7 +95,7 @@ class Contributing_factor(models.Model):
 #New addons
 class Incident_Evidence(models.Model):
     id = models.AutoField(primary_key=True)
-    incident_id = models.ForeignKey('Incident_Ticket', on_delete=models.CASCADE)
+    incident_id = models.ForeignKey('Incident_Ticket', on_delete=models.CASCADE , related_name="incident_evidences")
     file = models.FileField(upload_to='evidence')
 
 class Status(models.Model):
@@ -160,12 +160,12 @@ class Incident_Ticket(models.Model):
     location = models.CharField(max_length=100)
     assigned_POC = models.ForeignKey(Department_poc, on_delete=models.CASCADE, null=True)
     department = models.ForeignKey(Department, on_delete=models.CASCADE)
-    evidence = models.ForeignKey(Incident_Evidence, on_delete=models.CASCADE, null=True)
+    # evidence = models.ForeignKey(Incident_Evidence, on_delete=models.CASCADE, null=True)
     contributing_factors = models.ManyToManyField(Contributing_factor , db_table="Incident_factor")
     # # New fields
     Individuals_invloved = models.ManyToManyField(Employee, db_table="Individuals_involved", related_name='individuals_involved')
     Witnesses = models.ManyToManyField(Employee, db_table="Incident_witness", related_name='witness') 
-    ImmediateActions = models.ForeignKey(Immediate_actions,on_delete=models.CASCADE, null=True, related_name='action_taken')
+    # ImmediateActions = models.ForeignKey(Immediate_actions,on_delete=models.CASCADE, null=True, related_name='action_taken')
     Risk_assessment = models.ForeignKey(Risk_assessment, on_delete=models.CASCADE, null=True)
     Improvement_recommendations = models.ManyToManyField(Employee, through="Improvement_Recommendation", related_name='Improvements')
     Follow_up = models.ManyToManyField(Employee,through="Follow_up_action", related_name='follow_up_tickets')

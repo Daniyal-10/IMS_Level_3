@@ -143,6 +143,12 @@ class Follow_up_actionSerializer(serializers.ModelSerializer):
         model = Follow_up_action
         fields = "__all__"
 
+
+class EvidenceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Incident_Evidence
+        fields = "__all__"
+
 #Example payload  
 '''
 {                                                                                       
@@ -195,7 +201,7 @@ class Follow_up_actionSerializer(serializers.ModelSerializer):
 '''
 
 class Incident_ticketSerializer(serializers.ModelSerializer):
-    ImmediateActions=ImmediateAction_Serializer()
+    Immediateactions = ImmediateAction_Serializer(many=True)
     # contributing_factors=contributing_factors_Serializer()
     # status=StatusSerializer()
     # Improvement_Recommendation = Improvement_recommendationsSerializer()
@@ -210,9 +216,9 @@ class Incident_ticketSerializer(serializers.ModelSerializer):
                   "report_type",
                   "location",
                   "department",
-                #   "evidence",
+                #   "incident_evidences",
                   "assigned_POC",
-                  "ImmediateActions",
+                  "Immediateactions",
                   "Individuals_invloved",
                   "Witnesses",
                   "contributing_factors"
@@ -225,8 +231,8 @@ class Incident_ticketSerializer(serializers.ModelSerializer):
         # incident_evidence_data = validated_data.pop("evidence")
         factors_data = validated_data.pop("contributing_factors")
         pocc = validated_data.pop("assigned_POC")
-        Immediateactions = validated_data.pop("ImmediateActions", [])
-        emp = Immediateactions.pop("action_taken_by")
+        Immediateactions = validated_data.pop("Immediateactions")
+        # emp = Immediateactions.pop("action_taken_by")
 
         # Assigning POC
         POC = dep_id.department_pocc.first()
@@ -235,15 +241,14 @@ class Incident_ticketSerializer(serializers.ModelSerializer):
         #ticket creation
         ticket = Incident_Ticket.objects.create(**validated_data)
 
+
         # Assigning Immediate Actions
         for action in Immediateactions:
-            IA = Immediate_actions.objects.create(**Immediateactions)
-            for i in emp:
-                IA.action_taken_by.add(i)
-                
-        ticket.ImmediateActions = IA
-        ticket.save()
-
+            emp = action.pop("action_taken_by", [])
+            action["incident_id"] = ticket
+            IA = Immediate_actions.objects.create(**action)
+            IA.action_taken_by.set(emp)
+              
 
         # adding individuals involoved
         for i in Individual_data:
