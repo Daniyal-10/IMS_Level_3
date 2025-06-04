@@ -161,10 +161,10 @@ class Incident_Ticket(models.Model):
     assigned_POC = models.ForeignKey(Department_poc, on_delete=models.CASCADE, null=True)
     department = models.ForeignKey(Department, on_delete=models.CASCADE)
     # evidence = models.ForeignKey(Incident_Evidence, on_delete=models.CASCADE, null=True)
-    contributing_factors = models.ManyToManyField(Contributing_factor , db_table="Incident_factor")
+    contributing_factors = models.ManyToManyField(Contributing_factor , db_table="Incident_factor",blank=True)
     # # New fields
-    Individuals_invloved = models.ManyToManyField(Employee, db_table="Individuals_involved", related_name='individuals_involved')
-    Witnesses = models.ManyToManyField(Employee, db_table="Incident_witness", related_name='witness') 
+    Individuals_invloved = models.ManyToManyField(Employee, db_table="Individuals_involved", related_name='individuals_involved', blank=True)
+    Witnesses = models.ManyToManyField(Employee, db_table="Incident_witness", related_name='witness', blank=True) 
     # ImmediateActions = models.ForeignKey(Immediate_actions,on_delete=models.CASCADE, null=True, related_name='action_taken')
     Risk_assessment = models.ForeignKey(Risk_assessment, on_delete=models.CASCADE, null=True)
     Improvement_recommendations = models.ManyToManyField(Employee, through="Improvement_Recommendation", related_name='Improvements')

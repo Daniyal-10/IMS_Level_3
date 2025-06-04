@@ -91,7 +91,9 @@ class RiskAssessmentSerializer(serializers.ModelSerializer):
 class ImmediateAction_Serializer(serializers.ModelSerializer):
     class Meta:
         model = Immediate_actions
-        fields = "__all__"
+        # fields = "__all__"
+        exclude = ["incident_id"]
+
 class contributing_factors_Serializer(serializers.ModelSerializer):
     class Meta: 
         model = Contributing_factor
@@ -147,7 +149,7 @@ class Follow_up_actionSerializer(serializers.ModelSerializer):
 class EvidenceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Incident_Evidence
-        fields = "__all__"
+        fields = ["file"]
 
 #Example payload  
 '''
@@ -201,9 +203,10 @@ class EvidenceSerializer(serializers.ModelSerializer):
 '''
 
 class Incident_ticketSerializer(serializers.ModelSerializer):
-    Immediateactions = ImmediateAction_Serializer(many=True)
+    Immediateactions = ImmediateAction_Serializer(many=True, required =False, allow_null=True)
+    incident_evidences = EvidenceSerializer(many=True, required =False)
     # contributing_factors=contributing_factors_Serializer()
-    # status=StatusSerializer()
+    status=StatusSerializer()
     # Improvement_Recommendation = Improvement_recommendationsSerializer()
     # Follow_up_action = Follow_up_actionSerializer()
     # risk_assessment = riskassessmentSerializer()
@@ -216,31 +219,32 @@ class Incident_ticketSerializer(serializers.ModelSerializer):
                   "report_type",
                   "location",
                   "department",
-                #   "incident_evidences",
+                  "incident_evidences",
                   "assigned_POC",
                   "Immediateactions",
                   "Individuals_invloved",
                   "Witnesses",
-                  "contributing_factors"
+                  "contributing_factors",
+                #   "status",
                   ]
 
     def create(self, validated_data):
         dep_id = validated_data["department"]
+        
+        #Poping to store there value cux nested fields
         Individual_data = validated_data.pop("Individuals_invloved")
         incident_witness_data = validated_data.pop("Witnesses")
-        # incident_evidence_data = validated_data.pop("evidence")
         factors_data = validated_data.pop("contributing_factors")
         pocc = validated_data.pop("assigned_POC")
         Immediateactions = validated_data.pop("Immediateactions")
-        # emp = Immediateactions.pop("action_taken_by")
-
+        incident_evidences = validated_data.pop("incident_evidences", [])
+    
         # Assigning POC
         POC = dep_id.department_pocc.first()
         validated_data["assigned_POC"] = POC
 
         #ticket creation
         ticket = Incident_Ticket.objects.create(**validated_data)
-
 
         # Assigning Immediate Actions
         for action in Immediateactions:
@@ -249,29 +253,19 @@ class Incident_ticketSerializer(serializers.ModelSerializer):
             IA = Immediate_actions.objects.create(**action)
             IA.action_taken_by.set(emp)
               
-
         # adding individuals involoved
-        for i in Individual_data:
-            ticket.Individuals_invloved.add(i)
-        
+        ticket.Individuals_invloved.set(Individual_data)
         # adding factors
-        for i in factors_data:
-            ticket.contributing_factors.add(i)
-
+        ticket.contributing_factors.set(factors_data)
         # adding witness
-        for i in incident_witness_data:
-            ticket.Witnesses.add(i)
+        ticket.Witnesses.set(incident_witness_data)
 
-        #adding evidences
-        # if incident_evidence_data is not None:
-        #     for i  in incident_evidence_data:
-        #         ticket.evidence.add(i)
-        # if incident_evidence_data is None:
-        #     ticket.evidence.add("No Evidence")
+        # adding evidences
+        for evidence in incident_evidences:
+            Incident_Evidence.objects.create(incident_id = ticket, **evidence )
 
-        ticket.refresh_from_db()
+        # ticket.refresh_from_db()
         return ticket
-
 
 # class IncidentTicketSerializer1(serializers.ModelSerializer):
 #     Reporter = serializers.SerializerMethodField()

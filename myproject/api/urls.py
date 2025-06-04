@@ -20,6 +20,7 @@ router.register(r'recurrency', RecurrencyViewSet)
 router.register(r'risklevel', Risk_levelViewSet)
 router.register(r'riskassessment', RiskAssessmentView)
 router.register(r'both', EmployeeUserViewSet)
+router.register(r'status', StatusViewSet)
 
 urlpatterns = [
     # path('role/', RoleView),

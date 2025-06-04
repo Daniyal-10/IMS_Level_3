@@ -14,6 +14,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.core.cache import cache 
 import random
 from rest_framework import viewsets
+from rest_framework.parsers import MultiPartParser, FormParser
 
 
 # @api_view(["GET", "POST", "PATCH", "DELETE"])
@@ -151,4 +152,8 @@ class RiskAssessmentView(viewsets.ModelViewSet):
 
 class IncidentTicketViewSet(viewsets.ModelViewSet):
     queryset = Incident_Ticket.objects.all()
-    serializer_class = Incident_ticketSerializer    
+    serializer_class = Incident_ticketSerializer
+    
+class StatusViewSet(viewsets.ModelViewSet):
+    queryset = Status.objects.all()
+    serializer_class = StatusSerializer
