@@ -9,7 +9,9 @@ from rest_framework_simplejwt.views import (
 
 router = DefaultRouter()
 # router.register(r'employee', EmployeeViewSet)
-router.register(r'incident', IncidentTicketViewSet)
+router.register(r'incident', IncidentTicketViewSet, basename='incident')
+router.register(r'statusticket', StatusViewSet, basename='statusticket')
+router.register(r'pocticket', POCViewSet, basename='pocticket')
 router.register(r'incidenttype', IncidentTypeViewSet)
 router.register(r'role', RoleViewSet)
 router.register(r'department', DepartmentViewSet)

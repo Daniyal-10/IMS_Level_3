@@ -153,7 +153,15 @@ class RiskAssessmentView(viewsets.ModelViewSet):
 class IncidentTicketViewSet(viewsets.ModelViewSet):
     queryset = Incident_Ticket.objects.all()
     serializer_class = Incident_ticketSerializer
+
+class POCViewSet(viewsets.ModelViewSet):
+    queryset = Incident_Ticket.objects.all()
+    serializer_class = POCViewSerializer
     
 class StatusViewSet(viewsets.ModelViewSet):
-    queryset = Status.objects.all()
-    serializer_class = StatusSerializer
+    queryset = Incident_Ticket.objects.all()
+    serializer_class = StatusViewSerializer
+
+class POCViewSet(viewsets.ModelViewSet):
+    queryset = Incident_Ticket.objects.all()
+    serializer_class = POCViewSerializer

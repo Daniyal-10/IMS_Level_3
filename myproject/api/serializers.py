@@ -1,6 +1,6 @@
 from .models import *
 from rest_framework import serializers
-
+from datetime import datetime
 class RoleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Role
@@ -103,6 +103,11 @@ class StatusSerializer(serializers.ModelSerializer):
     class Meta:
         model = Status
         fields = "__all__"
+class IncidentStatusSerializer(serializers.ModelSerializer):
+    # status = StatusSerializer()
+    class Meta:
+        model = Incident_status
+        fields = "__all__"
 
 class riskassessmentSerializer(serializers.ModelSerializer):
     class Meta:
@@ -138,7 +143,8 @@ class EmployeeUserSerializer(serializers.ModelSerializer):
 class Improvement_recommendationsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Improvement_Recommendation
-        fields = ["action_description","responsible_employee_id"]
+        fields = "__all__"
+        # fields = ["action_description","responsible_employee_id"]
 
 class Follow_up_actionSerializer(serializers.ModelSerializer):
     class Meta:
@@ -201,41 +207,75 @@ class EvidenceSerializer(serializers.ModelSerializer):
     "Witnesses": []
 }
 '''
-
+#sample payload
+'''
+{
+        "requestor_id": 1,
+        "report_type": 1,
+        "location": "bhopal status",
+        "department": 1,
+        "Immediateactions": [
+            {
+                "id": 12,
+                "Description": "Fire was extinguished",
+                "action_taken_by": [
+                    3,
+                    4
+                ]
+            },
+            {
+                "id": 13,
+                "Description": "Aag bhujhana",
+                "action_taken_by": [
+                    4,
+                    5
+                ]
+            }
+        ],
+        "Individuals_invloved": [
+            2
+        ],
+        "Witnesses": [
+            3,
+            4
+        ],
+        "contributing_factors": [
+            3,
+            5
+        ]
+    }
+'''
 class Incident_ticketSerializer(serializers.ModelSerializer):
     Immediateactions = ImmediateAction_Serializer(many=True, required =False, allow_null=True)
     incident_evidences = EvidenceSerializer(many=True, required =False)
-    # contributing_factors=contributing_factors_Serializer()
-    status=StatusSerializer()
-    # Improvement_Recommendation = Improvement_recommendationsSerializer()
-    # Follow_up_action = Follow_up_actionSerializer()
-    # risk_assessment = riskassessmentSerializer()
+    status=StatusSerializer(many=True, read_only=True)
+
 
     class Meta:
         model = Incident_Ticket
-        fields = [
-                  'id',
-                  "requestor_id",
-                  "report_type",
-                  "location",
-                  "department",
-                  "incident_evidences",
-                  "assigned_POC",
-                  "Immediateactions",
-                  "Individuals_invloved",
-                  "Witnesses",
-                  "contributing_factors",
-                #   "status",
-                  ]
+        # fields = [
+        #           'id',
+        #           "requestor_id",
+        #           "report_type",
+        #           "location",
+        #           "department",
+        #           "incident_evidences",
+        #           "assigned_POC",
+        #           "Immediateactions",
+        #           "Individuals_invloved",
+        #           "Witnesses",
+        #           "contributing_factors",
+        #           "status",
+        #           ]
+        fields = '__all__'
 
     def create(self, validated_data):
         dep_id = validated_data["department"]
         
-        #Poping to store there value cux nested fields
+        #Poping to store there value cuz nested fields
         Individual_data = validated_data.pop("Individuals_invloved")
         incident_witness_data = validated_data.pop("Witnesses")
         factors_data = validated_data.pop("contributing_factors")
-        pocc = validated_data.pop("assigned_POC")
         Immediateactions = validated_data.pop("Immediateactions")
         incident_evidences = validated_data.pop("incident_evidences", [])
     
@@ -246,6 +286,16 @@ class Incident_ticketSerializer(serializers.ModelSerializer):
         #ticket creation
         ticket = Incident_Ticket.objects.create(**validated_data)
 
+        #status open
+        open_status = Status.objects.get(id=1)
+        status_data = {
+            "status_id": open_status,
+            "incident_id":ticket,
+            "date_created":datetime.now(),
+        }
+
+        Incident_status.objects.create(**status_data)
+        
         # Assigning Immediate Actions
         for action in Immediateactions:
             emp = action.pop("action_taken_by", [])
@@ -266,6 +316,58 @@ class Incident_ticketSerializer(serializers.ModelSerializer):
 
         # ticket.refresh_from_db()
         return ticket
+    
+
+
+
+
+
+
+# View for poc (Status) *********************************************************************************
+class StatusViewSerializer(serializers.ModelSerializer):
+    s=serializers.IntegerField(write_only=True)
+    class Meta:
+            model = Incident_Ticket
+            fields = ["id","s"]
+
+    def update(self, instance, validated_data):
+
+        status_id = validated_data.pop('s')
+        # instance.status.set([status_id])
+        # instance.save()
+        Incident_status.objects.create(
+                    incident_id = instance,
+                    status_id= Status.objects.get(pk=status_id),
+                )
+        
+        return instance
+    
+
+
+
+
+
+# View for POC *********************************************************************************
+class POCViewSerializer(serializers.ModelSerializer):
+    # Improvement_recommendations = Improvement_recommendationsSerializer(many =True)
+    # Follow_up = Follow_up_actionSerializer(many =True)
+    # Risk_assessment = riskassessmentSerializer(many=True)
+
+    class Meta:
+        model = Incident_Ticket
+        fields = "__all__"
+
+    def update(self, instance, validated_data):
+        print(validated_data)
+
+
+
+        return super().update(instance, validated_data)    
+
+
+
+
+
 
 # class IncidentTicketSerializer1(serializers.ModelSerializer):
 #     Reporter = serializers.SerializerMethodField()
@@ -308,42 +410,42 @@ class Incident_ticketSerializer(serializers.ModelSerializer):
 #     def get_ContributingFactors(self, obj):
 #         return [factor.name for factor in obj.contributing_factors.all()]
 
-class IncidentSerializer2(serializers.ModelSerializer):
-    class Meta:
-        model = Incident_Ticket
-        # fields = "__all__"
-        fields = [
-            'id',
-            'requestor_id',
-            'report_type',
-            'department',
-            'occurence_date',
-            'location',
-            'assigned_POC',
-            'contributing_factors',
-        ]
+# class IncidentSerializer2(serializers.ModelSerializer):
+#     class Meta:
+#         model = Incident_Ticket
+#         # fields = "__all__"
+#         fields = [
+#             'id',
+#             'requestor_id',
+#             'report_type',
+#             'department',
+#             'occurence_date',
+#             'location',
+#             'assigned_POC',
+#             'contributing_factors',
+#         ]
     
-    def to_representation(self, instance):
+#     def to_representation(self, instance):
 
-        rep =  super().to_representation(instance)   #in this we get the initial data from the model
+#         rep =  super().to_representation(instance)   #in this we get the initial data from the model
 
-        rep['Reportor'] = {
-            "Name":instance.requestor_id.user.full_name(),
-            "Designation": instance.requestor_id.designation_id.name,
-        }
-        rep['assigned_POC'] = instance.assigned_POC.employee_id.user.full_name()
-        rep['report_type'] = instance.report_type.name if instance.report_type else None
+#         rep['Reportor'] = {
+#             "Name":instance.requestor_id.user.full_name(),
+#             "Designation": instance.requestor_id.designation_id.name,
+#         }
+#         rep['assigned_POC'] = instance.assigned_POC.employee_id.user.full_name()
+#         rep['report_type'] = instance.report_type.name if instance.report_type else None
 
-        rep['contributing_factors'] = [factor.name for factor in instance.contributing_factors.all()]
+#         rep['contributing_factors'] = [factor.name for factor in instance.contributing_factors.all()]
 
-        rep['department'] = {
-            "id": instance.department.id,
-            "name": instance.department.name
-        } if instance.department else None
+#         rep['department'] = {
+#             "id": instance.department.id,
+#             "name": instance.department.name
+#         } if instance.department else None
 
-        rep.pop('requestor_id', None)
+#         rep.pop('requestor_id', None)
 
-        return rep
+#         return rep
         
 
 
@@ -354,97 +456,87 @@ class IncidentSerializer2(serializers.ModelSerializer):
 
 
 
-
-
-
-
-
-
-
-
-
-
 #******************************
-class IncidentTikcetSerializer(serializers.ModelSerializer):
-    class Meta: 
-        model = Incident_Ticket
-        fields = "__all__"
+# class IncidentTikcetSerializer(serializers.ModelSerializer):
+#     class Meta: 
+#         model = Incident_Ticket
+#         fields = "__all__"
 
-class IncidentTicketSerializer1(serializers.ModelSerializer):
-    Reporter = serializers.SerializerMethodField()
-    Department = DepartmentSerializer(source='department', read_only=True)
-    Report_Type = serializers.CharField(source='report_type.name', read_only=True)
-    Occurance_date = serializers.DateTimeField(source='occurence_date', read_only=True)
-    AssignedPOC = serializers.SerializerMethodField()
-    ContributingFactors = serializers.SerializerMethodField()
+# class IncidentTicketSerializer1(serializers.ModelSerializer):
+#     Reporter = serializers.SerializerMethodField()
+#     Department = DepartmentSerializer(source='department', read_only=True)
+#     Report_Type = serializers.CharField(source='report_type.name', read_only=True)
+#     Occurance_date = serializers.DateTimeField(source='occurence_date', read_only=True)
+#     AssignedPOC = serializers.SerializerMethodField()
+#     ContributingFactors = serializers.SerializerMethodField()
 
-    class Meta:
-        model = Incident_Ticket
-        fields = [
-            'id',
-            'Reporter',
-            'Report_Type',
-            'Department',
-            'Occurance_date',
-            'location',
-            'AssignedPOC',
-            'ContributingFactors'
-        ]
+#     class Meta:
+#         model = Incident_Ticket
+#         fields = [
+#             'id',
+#             'Reporter',
+#             'Report_Type',
+#             'Department',
+#             'Occurance_date',
+#             'location',
+#             'AssignedPOC',
+#             'ContributingFactors'
+#         ]
 
-    def get_Reporter(self, obj):
-        emp = obj.requestor_id
-        full_name = f"{emp.user.first_name} {emp.user.last_name}"
-        designation = emp.designation_id.name if emp.designation_id else ""
-        return {
-            "Name": full_name,
-            "Designation": designation
-        }
+#     def get_Reporter(self, obj):
+#         emp = obj.requestor_id
+#         full_name = f"{emp.user.first_name} {emp.user.last_name}"
+#         designation = emp.designation_id.name if emp.designation_id else ""
+#         return {
+#             "Name": full_name,
+#             "Designation": designation
+#         }
 
-    def get_AssignedPOC(self, obj):
-        if obj.assigned_POC and obj.assigned_POC.employee_id:
-            poc_user = obj.assigned_POC.employee_id.user
-            return {
-                "Name": f"{poc_user.first_name} {poc_user.last_name}"
-            }
-        return None
+#     def get_AssignedPOC(self, obj):
+#         if obj.assigned_POC and obj.assigned_POC.employee_id:
+#             poc_user = obj.assigned_POC.employee_id.user
+#             return {
+#                 "Name": f"{poc_user.first_name} {poc_user.last_name}"
+#             }
+#         return None
 
-    def get_ContributingFactors(self, obj):
-        return [factor.name for factor in obj.contributing_factors.all()]
+#     def get_ContributingFactors(self, obj):
+#         return [factor.name for factor in obj.contributing_factors.all()]
     
 
-class IncidentSerializer2(serializers.ModelSerializer):
-    class Meta:
-        model = Incident_Ticket
-        # fields = "__all__"
-        fields = [
-            'id',
-            'requestor_id',
-            'report_type',
-            'department',
-            'occurence_date',
-            'location',
-            'assigned_POC',
-            'contributing_factors'
-        ]
-    def to_representation(self, instance):
+# class IncidentSerializer2(serializers.ModelSerializer):
+#     class Meta:
+#         model = Incident_Ticket
+#         # fields = "__all__"
+#         fields = [
+#             'id',
+#             'requestor_id',
+#             'report_type',
+#             'department',
+#             'occurence_date',
+#             'location',
+#             'assigned_POC',
+#             'contributing_factors'
+#         ]
+#     def to_representation(self, instance):
 
-        rep =  super().to_representation(instance)   #in this we get the initial data from the model
+#         rep =  super().to_representation(instance)   #in this we get the initial data from the model
 
-        rep['Reportor'] = {
-            "Name":instance.requestor_id.user.full_name(),
-            "Designation": instance.requestor_id.designation_id.name,
-        }
-        rep['assigned_POC'] = instance.assigned_POC.employee_id.user.full_name()
-        rep['report_type'] = instance.report_type.name if instance.report_type else None
+#         rep['Reportor'] = {
+#             "Name":instance.requestor_id.user.full_name(),
+#             "Designation": instance.requestor_id.designation_id.name,
+#         }
+#         rep['assigned_POC'] = instance.assigned_POC.employee_id.user.full_name()
+#         rep['report_type'] = instance.report_type.name if instance.report_type else None
 
-        rep['contributing_factors'] = [factor.name for factor in instance.contributing_factors.all()]
+#         rep['contributing_factors'] = [factor.name for factor in instance.contributing_factors.all()]
 
-        rep['department'] = {
-            "id": instance.department.id,
-            "name": instance.department.name
-        } if instance.department else None
+#         rep['department'] = {
+#             "id": instance.department.id,
+#             "name": instance.department.name
+#         } if instance.department else None
 
-        rep.pop('requestor_id', None)
+#         rep.pop('requestor_id', None)
 
-        return rep
+#         return rep
         

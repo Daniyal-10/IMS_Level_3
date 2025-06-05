@@ -105,7 +105,7 @@ class Status(models.Model):
 class Incident_status(models.Model):
     id = models.AutoField(primary_key=True)
     status_id = models.ForeignKey(Status, on_delete=models.CASCADE)
-    incident_id = models.ForeignKey('Incident_Ticket', on_delete=models.CASCADE)
+    incident_id = models.ForeignKey('Incident_Ticket', on_delete=models.CASCADE , related_name="incident_status")
     date_created = models.DateTimeField(auto_now=True)
 
 class Potential_severity(models.Model):
@@ -128,7 +128,7 @@ class Improvement_Recommendation(models.Model):
     id = models.AutoField(primary_key=True)
     action_description = models.CharField(max_length=500)
     responsible_employee_id = models.ForeignKey(Employee, on_delete=models.CASCADE)
-    incident_id = models.ForeignKey('Incident_Ticket', on_delete=models.CASCADE)
+    incident_id = models.ForeignKey('Incident_Ticket', on_delete=models.CASCADE, related_name='Improvement_Recommendation' )
 
 class Follow_up_action(models.Model):
     id = models.AutoField(primary_key=True)
@@ -136,7 +136,6 @@ class Follow_up_action(models.Model):
     date_completed = models.DateTimeField()
     responsible_employee_id = models.ForeignKey(Employee, on_delete=models.CASCADE)
     incident_id = models.ForeignKey('Incident_Ticket', on_delete=models.CASCADE)
-
 
 class Immediate_actions(models.Model):
     id = models.AutoField(primary_key=True)
