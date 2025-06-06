@@ -165,3 +165,27 @@ class StatusViewSet(viewsets.ModelViewSet):
 class POCViewSet(viewsets.ModelViewSet):
     queryset = Incident_Ticket.objects.all()
     serializer_class = POCViewSerializer
+
+@api_view(["PUT", "PATCH"])
+def Poc_view(request):
+        if request.method == "PATCH":
+            data = request.data
+            obj = Incident_Ticket.objects.get(id = data["id"])
+            serializer = Incident_ticketSerializer(obj, data=data, partial=True)
+
+            if serializer.is_valid():
+                IR =Improvement_Recommendation.objects.create(
+                    incident_id =data["Improvement_recommendations"]["incident_id"],
+                    action_description = data["Improvement_recommendations"]["action_description"],
+                    responsible_employee_id = ["Improvement_recommendations"]["responsible_employee_id"],
+                )
+                IR.save()
+                # serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors)
+
+        # incident_ticket = Incident_Ticket.objects.get(id=request.data['id'])
+        # data = request.data['Improvement_recommendations']
+        # incident_ticket.Improvement_recommendations.set(data)
+        # incident_ticket.save()
+        # return Response({"message": "Improvement Recommendations Updated"}, status=status.HTTP_200_OK)

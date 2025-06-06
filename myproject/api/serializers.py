@@ -339,33 +339,38 @@ class StatusViewSerializer(serializers.ModelSerializer):
                     incident_id = instance,
                     status_id= Status.objects.get(pk=status_id),
                 )
-        
         return instance
     
-
-
-
-
-
 # View for POC *********************************************************************************
 class POCViewSerializer(serializers.ModelSerializer):
-    # Improvement_recommendations = Improvement_recommendationsSerializer(many =True)
+    Improvement_recommendations = Improvement_recommendationsSerializer(many =True, source='Improvement_Recommendation', read_only=True)
     # Follow_up = Follow_up_actionSerializer(many =True)
     # Risk_assessment = riskassessmentSerializer(many=True)
 
     class Meta:
         model = Incident_Ticket
-        fields = "__all__"
+        fields = ["Improvement_recommendations"]
 
     def update(self, instance, validated_data):
-        print(validated_data)
+        improvement_data = self.context['request'].data.get('Improvement_recommendations', [])
+        # Follow_up = validated_data.pop('Follow_up')
+        # Risk_assessment = validated_data.pop('Risk_assessment')
 
+        for one in improvement_data:
+            print(one)
+            desc = one.get("action_description")
+            emp = one.pop("responsible_employee_id", None)
 
+            emp_instance = Employee.objects.get(id=emp)
+            one["incident_id"] = instance
+            Improvement_Recommendation.objects.create(
+                responsible_employee_id = emp_instance,
+                action_description = desc,
+                )
 
-        return super().update(instance, validated_data)    
+        return instance
 
-
-
+   
 
 
 

@@ -106,7 +106,7 @@ class Incident_status(models.Model):
     id = models.AutoField(primary_key=True)
     status_id = models.ForeignKey(Status, on_delete=models.CASCADE)
     incident_id = models.ForeignKey('Incident_Ticket', on_delete=models.CASCADE , related_name="incident_status")
-    date_created = models.DateTimeField(auto_now=True)
+    date_created = models.DateTimeField(default=timezone.now)
 
 class Potential_severity(models.Model):
     id = models.AutoField(primary_key=True)
