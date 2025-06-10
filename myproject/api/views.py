@@ -166,7 +166,7 @@ class POCViewSet(viewsets.ModelViewSet):
     queryset = Incident_Ticket.objects.all()
     serializer_class = POCViewSerializer
 
-@api_view(["PUT", "PATCH"])
+@api_view(["PATCH"])
 def Poc_view(request):
         if request.method == "PATCH":
             data = request.data

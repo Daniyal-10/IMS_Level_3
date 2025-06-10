@@ -364,6 +364,7 @@ class POCViewSerializer(serializers.ModelSerializer):
             emp_instance = Employee.objects.get(id=emp)
             one["incident_id"] = instance
             Improvement_Recommendation.objects.create(
+                incident_id = instance,
                 responsible_employee_id = emp_instance,
                 action_description = desc,
                 )
@@ -371,9 +372,6 @@ class POCViewSerializer(serializers.ModelSerializer):
         return instance
 
    
-
-
-
 # class IncidentTicketSerializer1(serializers.ModelSerializer):
 #     Reporter = serializers.SerializerMethodField()
 #     Department = DepartmentSerializer(source='department', read_only=True)

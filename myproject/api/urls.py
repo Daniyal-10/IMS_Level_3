@@ -50,6 +50,6 @@ urlpatterns = [
     # path("emp1/", employee_v),
     # path("emp2/", employee_v2),
     #********************ModelVIewSet****************
-    path('pocview/',Poc_view),
+    # path('pocview/',Poc_view),
     path('',include(router.urls)),
 ]   
