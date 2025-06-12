@@ -381,8 +381,11 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         token = super().get_token(user)
 
         #adding custom claims
+        try:
+            token['employee_id'] = user.employee.id
+        except AttributeError:
+            token['employee_id'] = None
 
-        token['employee_id'] = user.employee.id
         return token
 
 # class IncidentTicketSerializer1(serializers.ModelSerializer):
