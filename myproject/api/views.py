@@ -132,7 +132,6 @@ class ContributingFactorsViewSet(viewsets.ModelViewSet):
 class StakeHolderViewSet(viewsets.ModelViewSet):
     queryset =  Stake_holder.objects.all()
     serializer_class = StakeHolderSerializer
-
     
 class PotentialSeverityView(viewsets.ModelViewSet):
     queryset = Potential_severity.objects.all()
@@ -150,9 +149,25 @@ class RiskAssessmentView(viewsets.ModelViewSet):
     queryset = Risk_assessment.objects.all()
     serializer_class = RiskAssessmentSerializer
 
+# Permission and JWT on the ticket
+from rest_framework.permissions import BasePermission
+
+class RoleBasedPermissions(BasePermission):
+    def has_permission(self, request, view):
+        if request.user.role == "employee" is request.method in ["POST","GET"]:
+            return True
+        if request.user.role == "assigned_POC" is request.method in ["POST","GET","PATCH"]:
+            return True
+        if request.user.role == "stake_holder" is request.method == "GET":
+            return True
+        return False    
+
+@permission_classes([RoleBasedPermissions,IsAuthenticated])
+@authentication_classes([JWTAuthentication])
 class IncidentTicketViewSet(viewsets.ModelViewSet):
     queryset = Incident_Ticket.objects.all()
     serializer_class = Incident_ticketSerializer
+
 
 class POCViewSet(viewsets.ModelViewSet):
     queryset = Incident_Ticket.objects.all()
@@ -189,3 +204,39 @@ def Poc_view(request):
         # incident_ticket.Improvement_recommendations.set(data)
         # incident_ticket.save()
         # return Response({"message": "Improvement Recommendations Updated"}, status=status.HTTP_200_OK)
+
+
+#************************* Login/ Logout***************
+class LoginAPIView(APIView):
+    def post(self, request):
+        email = request.data.get("email")
+        password = request.data.get("password")
+
+        if not email or not password:
+            return Response({"error":"Email and password are required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        user = authenticate(email=email, password=password)
+
+        if user is None:
+            raise AuthenticationFailed("Invalid email or password.")
+        
+        if not user.is_active:
+            raise AuthenticationFailed("This account is inactive.")
+    
+        refresh = RefreshToken.for_user(user)
+
+        return Response({
+            "refresh":str(refresh),
+            "access":str(refresh.access_token),
+        })
+    
+class LogoutAPIView(APIView):
+    def post(self, request):
+        try:
+            refresh_token = request.data.get("refresh_token")
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            return Response({"message": "Logged out"}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        

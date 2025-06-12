@@ -371,7 +371,20 @@ class POCViewSerializer(serializers.ModelSerializer):
 
         return instance
 
-   
+
+#              Adding employee id in the ticket token
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.views import TokenObtainPairView
+class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+
+        #adding custom claims
+
+        token['employee_id'] = user.employee.id
+        return token
+
 # class IncidentTicketSerializer1(serializers.ModelSerializer):
 #     Reporter = serializers.SerializerMethodField()
 #     Department = DepartmentSerializer(source='department', read_only=True)
