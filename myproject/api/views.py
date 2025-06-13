@@ -149,24 +149,6 @@ class RiskAssessmentView(viewsets.ModelViewSet):
     queryset = Risk_assessment.objects.all()
     serializer_class = RiskAssessmentSerializer
 
-# Permission and JWT on the ticket
-from rest_framework.permissions import BasePermission
-
-class RoleBasedPermissions(BasePermission):
-    def has_permission(self, request, view):
-        if request.user.role == "employee" is request.method in ["POST","GET"]:
-            return True
-        if request.user.role == "assigned_POC" is request.method in ["POST","GET","PATCH"]:
-            return True
-        if request.user.role == "stake_holder" is request.method == "GET":
-            return True
-        return False    
-
-@permission_classes([RoleBasedPermissions,IsAuthenticated])
-@authentication_classes([JWTAuthentication])
-class IncidentTicketViewSet(viewsets.ModelViewSet):
-    queryset = Incident_Ticket.objects.all()
-    serializer_class = Incident_ticketSerializer
 
 
 class POCViewSet(viewsets.ModelViewSet):
@@ -192,18 +174,12 @@ def Poc_view(request):
                 IR =Improvement_Recommendation.objects.create(
                     incident_id =data["Improvement_recommendations"]["incident_id"],
                     action_description = data["Improvement_recommendations"]["action_description"],
-                    responsible_employee_id = ["Improvement_recommendations"]["responsible_employee_id"],
+                    responsible_employee_id = data["Improvement_recommendations"]["responsible_employee_id"],
                 )
                 IR.save()
                 # serializer.save()
                 return Response(serializer.data)
             return Response(serializer.errors)
-
-        # incident_ticket = Incident_Ticket.objects.get(id=request.data['id'])
-        # data = request.data['Improvement_recommendations']
-        # incident_ticket.Improvement_recommendations.set(data)
-        # incident_ticket.save()
-        # return Response({"message": "Improvement Recommendations Updated"}, status=status.HTTP_200_OK)
 
 
 #************************* Login/ Logout***************
@@ -240,3 +216,130 @@ class LogoutAPIView(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         
+
+
+#Permissions and Authentication for ticket
+from rest_framework.permissions import BasePermission
+
+class RoleBasedPermissions(BasePermission):
+    def has_permission(self, request, view):
+        if request.user.role == "employee" is request.method in ["POST","GET"]:
+            return True
+        if request.user.role == "assigned_POC" is request.method in ["POST","GET","PATCH"]:
+            return True
+        if request.user.role == "stake_holder" is request.method == "GET":
+            return True
+        return False    
+
+@permission_classes([RoleBasedPermissions,IsAuthenticated])
+@authentication_classes([JWTAuthentication])
+class IncidentTicketViewSet(viewsets.ModelViewSet):
+    queryset = Incident_Ticket.objects.all()
+    serializer_class = Incident_ticketSerializer        
+        
+
+# Resst Password API
+@api_view(["POST"])
+def reset_passwordView(request):
+    email = request.data.get("email")
+    oldpassword = request.data.get("oldpassword")
+    newpassword = request.data.get("newpassword")
+    user = CustomUser.objects.get(email=email)
+    if user.check_password(oldpassword):
+        user.set_password(newpassword)
+        user.save()
+        return Response({"message": "Password reset successfully"}, status=status.HTTP_200_OK)
+    return Response({"error": "Old password is incorrect"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+# #************************ Forget Password Api ************************************************
+import random
+
+otp_storage = {}
+class RequestPasswordReset(APIView):
+    def post(self, request):
+        email = request.data.get('email')
+
+        if not email:
+            return Response({"error": "Email is required"},status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            user = CustomUser.objects.get(email = email)
+        except CustomUser.DoesNotExist:
+            return Response({"error":"User does not exist"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        otp = str(random.randint(100000,999999))
+
+        otp_storage[email] = {
+            'otp':otp,
+            'verified':False
+        }
+
+        print(f"Otp for {email}:{otp}")
+
+        send_mail(
+        subject="Password reset OTP",
+        message=f"Your OTP for Password reset is: {otp}.",
+        from_email= "workwithdaniyall@gmail.com",
+        recipient_list=[email],
+        fail_silently=False
+        )
+
+        return Response({"message":"Otp send to your email."}, status=status.HTTP_200_OK)
+
+
+class VerifyOtp(APIView):
+    def post(self, request):
+        email = request.data.get("email")
+        otp = request.data.get("otp")
+
+        if not email or not otp:
+            return Response({"error":"Email and otp are required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if email not in otp_storage:
+            return Response({"error":"otp expired or not requested"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        stored_otp_data = otp_storage[email]
+
+        #verifying the otp 
+        if stored_otp_data['otp'] == otp:
+            otp_storage[email]["verified"] = True
+            return Response({"message":"Otp verified successfully"}, status=status.HTTP_200_OK)
+        else:
+            return Response({"error":"Invalied Otp"})
+        
+
+class SetNewPassword(APIView):
+    def post(self, request):
+        email = request.data.get("email")
+        new_password = request.data.get("new_password") 
+
+        if not email or not new_password:
+            return Response({"error":"Email and new password are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Check if OTP was verified
+        if email not in otp_storage or not otp_storage[email].get('verified'):
+            return Response(
+                {"error": "OTP not verified - please complete OTP verification first"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            user = CustomUser.objects.get(email=email)
+            user.set_password(new_password)
+            user.save() 
+            
+        # Clear the OTP after successful password change
+            if email in otp_storage:
+                del otp_storage[email]
+
+            return Response({"message":"Password changed successfully"}, status=status.HTTP_200_OK)
+        except CustomUser.DoesNotExist:
+            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+    
+    
+        
+

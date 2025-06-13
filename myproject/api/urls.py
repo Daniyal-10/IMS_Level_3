@@ -47,7 +47,14 @@ urlpatterns = [
     path('  ', TokenRefreshView.as_view(), name='token_refresh'),
     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('logout/', LogoutAPIView.as_view(), name='logout'),
+    path('resetpassword/', reset_passwordView),    # Just reset password
+    # path('forgetpassword/', request_reset_password), #1  Forget password urls
+    # path('otp_verify/', otp_verification),  #2
+    # path('reset/', reset_password), #3
     # path("emp1/", employee_v),
+    path('forgetpassword/', RequestPasswordReset.as_view() ),
+    path('otpverify/', VerifyOtp.as_view() ),
+    path('reset/', SetNewPassword.as_view() ),
     # path("emp2/", employee_v2),
     #********************ModelVIewSet****************
     # path('pocview/',Poc_view),
