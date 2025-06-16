@@ -319,10 +319,10 @@ class Incident_ticketSerializer(serializers.ModelSerializer):
 
         rep =  super().to_representation(instance)   #in this we get the initial data from the model
 
-        rep["Immediateactions"] = {
-            "Description": instance.Immediateactions.Description() if instance.Immediateactions else None,
-            "action_taken_by" : instance.Immediateactions.action_taken_by.all if instance.Immediateactions else None,
-        }
+        # rep["Immediateactions"] = {
+        #     "action_taken_by" : [emp.name for emp in instance.Immediateactions.action_taken_by.all()],
+        # }
+        
 
         rep["Potential_severity"] = instance.Potential_severity.name if instance.Potential_severity else None
         rep["recurrency"] = instance.recurrency.name if instance.recurrency else None
@@ -341,9 +341,10 @@ class Incident_ticketSerializer(serializers.ModelSerializer):
 
         rep['department'] = {
             "id": instance.department.id,
-            "name": instance.department.name
+            "name": instance.department.name    
         } if instance.department else None
 
+        rep["Witnesses"] = [emp.user.full_name() for emp in instance.Witnesses.all()]
         rep.pop('requestor_id', None)
     
         return rep
@@ -361,8 +362,6 @@ class StatusViewSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
 
         status_id = validated_data.pop('s')
-        # instance.status.set([status_id])
-        # instance.save()
         Incident_status.objects.create(
                     incident_id = instance,
                     status_id= Status.objects.get(pk=status_id),
@@ -410,22 +409,23 @@ class POCViewSerializer(serializers.ModelSerializer):
         # follow up actions 
         for follow in Follow_up:
             desc = follow.get("action_description")
-            
-            emp_id = follow.pop("responsible_employee_id", None)
+            emp_id = follow.get("responsible_employee_id")
 
             emp_instance = Employee.objects.get(id=emp_id)
-            follow["incident_id"] = instance
+
+            # follow["incident_id"] = instance
             Follow_up_action.objects.create(
                 incident_id = instance,
                 responsible_employee_id = emp_instance,
                 action_description = desc,
                 )
         instance.save() 
+        
         return instance
 
 
 
-#              Adding employee id in the ticket token ddataaaaaaaaaaaaa
+#*******************Adding employee id in the ticket token ddataaaaaaaaaaaaa****************************
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
