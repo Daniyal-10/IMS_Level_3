@@ -145,9 +145,9 @@ class Risk_levelViewSet(viewsets.ModelViewSet):
     queryset = Risk_level.objects.all()
     serializer_class = Risk_levelSerializer
 
-class RiskAssessmentView(viewsets.ModelViewSet):
-    queryset = Risk_assessment.objects.all()
-    serializer_class = RiskAssessmentSerializer
+# class RiskAssessmentView(viewsets.ModelViewSet):
+#     queryset = Risk_assessment.objects.all()
+#     serializer_class = RiskAssessmentSerializer
 
 
 
@@ -231,8 +231,8 @@ class RoleBasedPermissions(BasePermission):
             return True
         return False    
 
-@permission_classes([RoleBasedPermissions,IsAuthenticated])
-@authentication_classes([JWTAuthentication])
+# @permission_classes([RoleBasedPermissions,IsAuthenticated])
+# @authentication_classes([JWTAuthentication])
 class IncidentTicketViewSet(viewsets.ModelViewSet):
     queryset = Incident_Ticket.objects.all()
     serializer_class = Incident_ticketSerializer        

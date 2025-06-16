@@ -84,10 +84,10 @@ class Risk_levelSerializer(serializers.ModelSerializer):
         model = Risk_level
         fields = "__all__"
 
-class RiskAssessmentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Risk_assessment
-        fields = "__all__"
+# class RiskAssessmentSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Risk_assessment
+#         fields = "__all__"
 class ImmediateAction_Serializer(serializers.ModelSerializer):
     class Meta:
         model = Immediate_actions
@@ -109,10 +109,10 @@ class IncidentStatusSerializer(serializers.ModelSerializer):
         model = Incident_status
         fields = "__all__"
 
-class riskassessmentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Risk_assessment
-        fields = "__all__"
+# class riskassessmentSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Risk_assessment
+#         fields = "__all__"
 # Creating Employee and user in this serializer 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -190,7 +190,6 @@ class EvidenceSerializer(serializers.ModelSerializer):
     "ImmediateAction": [
     {
       "employee_id": [1],
-      "title": "nn",
       "description": "k"
     }
     ],
@@ -247,6 +246,7 @@ class EvidenceSerializer(serializers.ModelSerializer):
 '''
 class Incident_ticketSerializer(serializers.ModelSerializer):
     Immediateactions = ImmediateAction_Serializer(many=True, required =False, allow_null=True)
+    # follow_up = Follow_up_actionSerializer(many=True, required = False, allow_null=True)
     incident_evidences = EvidenceSerializer(many=True, required =False)
     status=StatusSerializer(many=True, read_only=True)
 
@@ -310,18 +310,46 @@ class Incident_ticketSerializer(serializers.ModelSerializer):
         # adding witness
         ticket.Witnesses.set(incident_witness_data)
 
-        # adding evidences
+     # adding evidences
         for evidence in incident_evidences:
             Incident_Evidence.objects.create(incident_id = ticket, **evidence )
 
-        # ticket.refresh_from_db()
-        return ticket
+    # Customising ticket view
+    def to_representation(self, instance):
+
+        rep =  super().to_representation(instance)   #in this we get the initial data from the model
+
+        rep["Immediateactions"] = {
+            "Description": instance.Immediateactions.Description() if instance.Immediateactions else None,
+            "action_taken_by" : instance.Immediateactions.action_taken_by.all if instance.Immediateactions else None,
+        }
+
+        rep["Potential_severity"] = instance.Potential_severity.name if instance.Potential_severity else None
+        rep["recurrency"] = instance.recurrency.name if instance.recurrency else None
+        rep["risk_level"] = instance.risk_level.name if instance.risk_level else None
+
+        rep['Reportor'] = {
+            "Name":instance.requestor_id.user.full_name(),
+            "Designation": instance.requestor_id.designation_id.name,
+        }
+
+        rep['assigned_POC'] = instance.assigned_POC.employee_id.user.full_name() if instance.assigned_POC else None
+
+        rep['report_type'] = instance.report_type.name if instance.report_type else None
+
+        rep['contributing_factors'] = [factor.name for factor in instance.contributing_factors.all()]
+
+        rep['department'] = {
+            "id": instance.department.id,
+            "name": instance.department.name
+        } if instance.department else None
+
+        rep.pop('requestor_id', None)
     
-
-
-
-
-
+        return rep
+        # ticket.refresh_from_db()
+        # return ticket
+    
 
 # View for poc (Status) *********************************************************************************
 class StatusViewSerializer(serializers.ModelSerializer):
@@ -341,21 +369,31 @@ class StatusViewSerializer(serializers.ModelSerializer):
                 )
         return instance
     
-# View for POC *********************************************************************************
+# *************************************View for POC *********************************************************************************
 class POCViewSerializer(serializers.ModelSerializer):
     Improvement_recommendations = Improvement_recommendationsSerializer(many =True, source='Improvement_Recommendation', read_only=True)
+    Follow_up = Follow_up_actionSerializer(many=True, source= 'Follow_up_action', read_only=True)
     # Follow_up = Follow_up_actionSerializer(many =True)
-    # Risk_assessment = riskassessmentSerializer(many=True)
 
     class Meta:
         model = Incident_Ticket
-        fields = ["Improvement_recommendations"]
+        fields = ["Improvement_recommendations","Follow_up","risk_level","recurrency","Potential_severity"]
 
     def update(self, instance, validated_data):
         improvement_data = self.context['request'].data.get('Improvement_recommendations', [])
-        # Follow_up = validated_data.pop('Follow_up')
-        # Risk_assessment = validated_data.pop('Risk_assessment')
+        Follow_up = validated_data.pop("Follow_up",[])
+        risk = validated_data.pop("risk_level")
+        recurrency = validated_data.pop("recurrency")
+        potential_severity = validated_data.pop("Potential_severity")
 
+        if risk:
+            instance.risk_level = risk
+        if recurrency:
+            instance.recurrency = recurrency
+        if potential_severity:
+            instance.Potential_severity = potential_severity
+
+        # Improvemnt_recommendation
         for one in improvement_data:
             print(one)
             desc = one.get("action_description")
@@ -369,10 +407,25 @@ class POCViewSerializer(serializers.ModelSerializer):
                 action_description = desc,
                 )
 
+        # follow up actions 
+        for follow in Follow_up:
+            desc = follow.get("action_description")
+            
+            emp_id = follow.pop("responsible_employee_id", None)
+
+            emp_instance = Employee.objects.get(id=emp_id)
+            follow["incident_id"] = instance
+            Follow_up_action.objects.create(
+                incident_id = instance,
+                responsible_employee_id = emp_instance,
+                action_description = desc,
+                )
+        instance.save() 
         return instance
 
 
-#              Adding employee id in the ticket token
+
+#              Adding employee id in the ticket token ddataaaaaaaaaaaaa
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -444,27 +497,27 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 #             'contributing_factors',
 #         ]
     
-#     def to_representation(self, instance):
+    # def to_representation(self, instance):
 
-#         rep =  super().to_representation(instance)   #in this we get the initial data from the model
+    #     rep =  super().to_representation(instance)   #in this we get the initial data from the model
 
-#         rep['Reportor'] = {
-#             "Name":instance.requestor_id.user.full_name(),
-#             "Designation": instance.requestor_id.designation_id.name,
-#         }
-#         rep['assigned_POC'] = instance.assigned_POC.employee_id.user.full_name()
-#         rep['report_type'] = instance.report_type.name if instance.report_type else None
+    #     rep['Reportor'] = {
+    #         "Name":instance.requestor_id.user.full_name(),
+    #         "Designation": instance.requestor_id.designation_id.name,
+    #     }
+    #     rep['assigned_POC'] = instance.assigned_POC.employee_id.user.full_name()
+    #     rep['report_type'] = instance.report_type.name if instance.report_type else None
 
-#         rep['contributing_factors'] = [factor.name for factor in instance.contributing_factors.all()]
+    #     rep['contributing_factors'] = [factor.name for factor in instance.contributing_factors.all()]
 
-#         rep['department'] = {
-#             "id": instance.department.id,
-#             "name": instance.department.name
-#         } if instance.department else None
+    #     rep['department'] = {
+    #         "id": instance.department.id,
+    #         "name": instance.department.name
+    #     } if instance.department else None
 
-#         rep.pop('requestor_id', None)
+    #     rep.pop('requestor_id', None)
 
-#         return rep
+    #     return rep
         
 
 
