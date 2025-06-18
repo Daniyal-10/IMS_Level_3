@@ -51,7 +51,7 @@ class CustomUser(AbstractUser):
     objects = CustomUserManager()
 
     def full_name(self):
-        return f"{self.first_name}{self.last_name}"
+        return f"{self.first_name} {self.last_name}"
 
     def __str__(self):
         return self.email    
@@ -135,7 +135,7 @@ class Follow_up_action(models.Model):
     action_description = models.CharField(max_length=500)
     date_completed = models.DateTimeField(auto_now=True)
     responsible_employee_id = models.ForeignKey(Employee, on_delete=models.CASCADE)
-    incident_id = models.ForeignKey('Incident_Ticket', on_delete=models.CASCADE)
+    incident_id = models.ForeignKey('Incident_Ticket', on_delete=models.CASCADE, related_name="follow_up")
 
 class Immediate_actions(models.Model):
     id = models.AutoField(primary_key=True)

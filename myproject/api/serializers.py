@@ -91,8 +91,18 @@ class Risk_levelSerializer(serializers.ModelSerializer):
 class ImmediateAction_Serializer(serializers.ModelSerializer):
     class Meta:
         model = Immediate_actions
-        # fields = "__all__"
-        exclude = ["incident_id"]
+        fields = "__all__"
+        # exclude = ["incident_id"]
+
+    # def to_representation(self, instance):
+    #     data = super().to_representation(instance)
+    #     id = data.pop('id')
+    #     tokenid = data.pop('incident_id')
+    #     data["action_taken_by"] = [
+    #         i["user"]["full_name"] for i in EmployeeSerializer(instance.action_taken_by , many=True).data]
+    #     return data
+
+
 
 class contributing_factors_Serializer(serializers.ModelSerializer):
     class Meta: 
@@ -144,6 +154,13 @@ class Improvement_recommendationsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Improvement_Recommendation
         fields = "__all__"
+
+        # def to_representation(self, instance):
+        #     data = super().to_representation(instance)
+        #     data['incident_id'] = instance.incident.id
+        #     data["action_description"] = instance.action_description
+        #     # data["responsible_employee_id"] = 
+        #     return data
         # fields = ["action_description","responsible_employee_id"]
 
 class Follow_up_actionSerializer(serializers.ModelSerializer):
@@ -315,18 +332,62 @@ class Incident_ticketSerializer(serializers.ModelSerializer):
             Incident_Evidence.objects.create(incident_id = ticket, **evidence )
 
     # Customising ticket view
-    def to_representation(self, instance):
+    def to_representation(self, instance): 
 
         rep =  super().to_representation(instance)   #in this we get the initial data from the model
+        
+        rep["Improvement_recommendations"] = [
+            {
+            "id": im.id,
+            "action_description": im.action_description,
+            "incident_id":im.incident_id.id,
+            "responsible_employee_id": im.responsible_employee_id.user.id,
+            "responsible_employee": im.responsible_employee_id.user.full_name()
+        } for im in instance.Improvement_Recommendation.all()
+        ]
 
-        # rep["Immediateactions"] = {
-        #     "action_taken_by" : [emp.name for emp in instance.Immediateactions.action_taken_by.all()],
-        # }
+        rep["Follow_up"] = [
+            {
+                "id": fw.id,
+                "action_description":fw.action_description,
+                "date_completed":fw.date_completed,
+                "responsible_employee_id" : fw.responsible_employee_id.user.id,
+                "responsible_employee" : fw.responsible_employee_id.user.full_name(),
+                "incident_id":fw.incident_id.id
+            } for fw in instance.follow_up.all()
+        ]
+
+        rep["status"] = [
+                {
+                # "id":s.id(),
+                "name":s.status_id.name,
+                "date_created": s.date_created
+            } for s in instance.incident_status.all()
+        ]
+
+        rep["Immediateactions"] = [
+            {
+                "id": ia.id,
+                "Description":ia.Description,
+                "incident_id":ia.incident_id.id,
+                "action_taken_by": [
+                    {
+                        "id": emp.id,
+                        "user": emp.user.full_name()
+                    } for emp in ia.action_taken_by.all()
+                ]
+            } for ia in instance.Immediateactions.all()
+        ]
         
 
         rep["Potential_severity"] = instance.Potential_severity.name if instance.Potential_severity else None
         rep["recurrency"] = instance.recurrency.name if instance.recurrency else None
         rep["risk_level"] = instance.risk_level.name if instance.risk_level else None
+
+        # rep["status"] = {
+        #     "id":instance.status.id(),
+        #     "name":instance.incident_status.name
+        # }
 
         rep['Reportor'] = {
             "Name":instance.requestor_id.user.full_name(),
@@ -345,6 +406,10 @@ class Incident_ticketSerializer(serializers.ModelSerializer):
         } if instance.department else None
 
         rep["Witnesses"] = [emp.user.full_name() for emp in instance.Witnesses.all()]
+
+        rep["Individuals_invloved"] = [emp.user.full_name() for emp in instance.Individuals_invloved.all()]
+
+        #popping unnecessary fields from the response
         rep.pop('requestor_id', None)
     
         return rep
